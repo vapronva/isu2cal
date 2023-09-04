@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import requests
 from pydantic import BaseModel, Field, HttpUrl, NonNegativeInt
@@ -17,10 +17,8 @@ ID_ITMO_URL_TOKEN_ENDPOINT: str = (
 )
 ID_ITMO_URL_REDIRECT_PROFILE: str = "https://id.itmo.ru/login/callback"
 
-USER_AGENT_AUTH: str = (
-    "isu2cal/1.0 (ReIdAp/1.2; +https://gl.vprw.ru/itmo-university/isu2cal)"
-)
-USER_AGENT_GET: str = "isu2cal/1.0"
+USER_AGENT_ID_AUTHENTICATION: str = "isu2cal/1.0 (ReIdAp/1.2)"
+USER_AGENT_GENERAL_REQUEST: str = "isu2cal/1.0"
 
 
 class TokenResponseModel(BaseModel):
@@ -51,13 +49,27 @@ class ITMOAuthenticator:
             redirect_uri=ID_ITMO_URL_REDIRECT_PROFILE,
             scope=self._scope,
         )
+        self.__access_token: str | None = None
+        self.__refresh_token: str | None = None
+        self._token_type: str | None = None
+        self._expires_at: datetime | None = None
         self.__post_init__()
 
-    def __post_init__(self) -> None:
-        webdriver_options: Options = Options()
-        Options().add_argument("--user-agent=" + USER_AGENT_AUTH)
-        self.__driver = webdriver.Firefox(options=webdriver_options)
+    def __post_init__(self, enable_custom_user_agent: bool = False) -> None:
+        firefox_profile = Options()
+        if enable_custom_user_agent:
+            firefox_profile.set_preference(
+                "general.useragent.override",
+                USER_AGENT_ID_AUTHENTICATION,
+            )
+        self.__driver = webdriver.Firefox(options=firefox_profile)
         self.__driver.implicitly_wait(10)
+
+    def __update_tokens(self, token: TokenResponseModel) -> None:
+        self.__access_token = token.access_token
+        self.__refresh_token = token.refresh_token
+        self._token_type = token.token_type
+        self._expires_at = token.expires_at
 
     def authenticate(self) -> None:
         authorization_url, _ = self.__oauth_session.authorization_url(
@@ -75,53 +87,39 @@ class ITMOAuthenticator:
                 code=callback_url.split("code=")[1],
                 method="POST",
                 headers={
-                    "User-Agent": USER_AGENT_AUTH,
+                    "User-Agent": USER_AGENT_ID_AUTHENTICATION,
                 },
                 include_client_id=True,
                 client_secret=self._client_secret,
             ),
         )
+        self.__update_tokens(token)
         self.__del_wd()
-        self.__access_token = token.access_token
-        self.__refresh_token = token.refresh_token
-        self._token_type = token.token_type
-        self._expires_at = token.expires_at
 
-    def refresh(self) -> None:
-        token: TokenResponseModel = TokenResponseModel(
-            **self.__oauth_session.refresh_token(
-                token_url=ID_ITMO_URL_TOKEN_ENDPOINT,
-                refresh_token=self.__refresh_token,
-                headers={
-                    "User-Agent": USER_AGENT_AUTH,
-                },
-                include_client_id=True,
-                client_secret=self._client_secret,
-            ),
-        )
-        self.__access_token = token.access_token
-        self.__refresh_token = token.refresh_token
-        self._token_type = token.token_type
-        self._expires_at = token.expires_at
-
-    def get(
+    def request(
         self,
+        method: str,
         url: HttpUrl | str,
         timeout: NonNegativeInt = 20,
-        user_agent: str = USER_AGENT_GET,
+        user_agent: str = USER_AGENT_GENERAL_REQUEST,
         accept_language: str = "en",
+        headers: dict | None = None,
         **kwargs,
     ) -> requests.Response:
-        if self._expires_at < datetime.now(tz=timezone.utc):
-            self.refresh()
-        return requests.get(
-            url.__str__(),
-            headers={
-                "Authorization": "Bearer " + self.__access_token,
+        if headers is None:
+            headers = {}
+        headers.update(
+            {
+                "Authorization": f"Bearer {self.__access_token}",
                 "User-Agent": user_agent,
                 "Accept": "application/json",
                 "Accept-Language": accept_language,
             },
+        )
+        return requests.request(
+            method,
+            url.__str__(),
+            headers=headers,
             timeout=timeout,
             **kwargs,
         )
