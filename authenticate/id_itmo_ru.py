@@ -1,4 +1,6 @@
-from datetime import datetime
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 from pydantic import BaseModel, Field, HttpUrl, NonNegativeInt
@@ -40,6 +42,7 @@ class ITMOAuthenticator:
         client_id: str,
         client_secret: str | None,
         scope: list[str],
+        token_file: Path = Path("id_itmo_ru-token.json"),
     ) -> None:
         self._client_id: str = client_id
         self._client_secret: str = client_secret if client_secret else ""
@@ -53,7 +56,8 @@ class ITMOAuthenticator:
         self.__refresh_token: str | None = None
         self._token_type: str | None = None
         self._expires_at: datetime | None = None
-        self.__post_init__()
+        self._token_file = token_file
+        self.__load_token()
 
     def __post_init__(self, enable_custom_user_agent: bool = False) -> None:
         firefox_profile = Options()
@@ -65,13 +69,40 @@ class ITMOAuthenticator:
         self.__driver = webdriver.Firefox(options=firefox_profile)
         self.__driver.implicitly_wait(10)
 
+    def __load_token(self) -> None:
+        if self._token_file.exists():
+            with open(self._token_file) as f:
+                token_data = json.load(f)
+                self.__access_token = token_data.get("access_token")
+                self.__refresh_token = token_data.get("refresh_token")
+                self._token_type = token_data.get("token_type")
+                self._expires_at = datetime.fromisoformat(token_data.get("expires_at"))
+
+    def __save_token(self) -> None:
+        token_data = {
+            "access_token": self.__access_token,
+            "refresh_token": self.__refresh_token,
+            "token_type": self._token_type,
+            "expires_at": self._expires_at.isoformat() if self._expires_at else None,
+        }
+        with open(self._token_file, "w") as f:
+            json.dump(token_data, f)
+
     def __update_tokens(self, token: TokenResponseModel) -> None:
         self.__access_token = token.access_token
         self.__refresh_token = token.refresh_token
         self._token_type = token.token_type
         self._expires_at = token.expires_at
+        self.__save_token()
 
-    def authenticate(self) -> None:
+    def authenticate(self, override_expiration_check: bool = False) -> None:
+        if not override_expiration_check and (
+            self.__access_token is not None and self._expires_at
+            if self._expires_at is not None
+            else datetime.now(tz=timezone.utc) < datetime.now(tz=timezone.utc)
+        ):
+            return
+        self.__post_init__()
         authorization_url, _ = self.__oauth_session.authorization_url(
             url=ID_ITMO_URL_AUTHORIZATION_ENDPOINT,
         )
@@ -110,7 +141,7 @@ class ITMOAuthenticator:
             headers = {}
         headers.update(
             {
-                "Authorization": f"Bearer {self.__access_token}",
+                "Authorization": f"{self._token_type} {self.__access_token}",
                 "User-Agent": user_agent,
                 "Accept": "application/json",
                 "Accept-Language": accept_language,
