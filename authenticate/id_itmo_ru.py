@@ -41,7 +41,8 @@ class ITMOAuthenticator:
         self,
         client_id: str,
         client_secret: str | None,
-        scope: list[str],
+        scope: tuple[str, ...]
+        | list[str] = ("openid", "profile", "email", "offline_access"),
         token_file: Path = Path("id_itmo_ru-token.json"),
     ) -> None:
         self._client_id: str = client_id
@@ -95,13 +96,7 @@ class ITMOAuthenticator:
         self._expires_at = token.expires_at
         self.__save_token()
 
-    def authenticate(self, override_expiration_check: bool = False) -> None:
-        if not override_expiration_check and (
-            self.__access_token is not None and self._expires_at
-            if self._expires_at is not None
-            else datetime.now(tz=timezone.utc) < datetime.now(tz=timezone.utc)
-        ):
-            return
+    def authenticate(self) -> None:
         self.__post_init__()
         authorization_url, _ = self.__oauth_session.authorization_url(
             url=ID_ITMO_URL_AUTHORIZATION_ENDPOINT,
@@ -120,12 +115,35 @@ class ITMOAuthenticator:
                 headers={
                     "User-Agent": USER_AGENT_ID_AUTHENTICATION,
                 },
-                include_client_id=True,
+                client_id=self._client_id,
                 client_secret=self._client_secret,
             ),
         )
         self.__update_tokens(token)
         self.__del_wd()
+
+    def refresh(self) -> None:
+        token: TokenResponseModel = TokenResponseModel(
+            **self.__oauth_session.refresh_token(
+                token_url=ID_ITMO_URL_TOKEN_ENDPOINT,
+                refresh_token=self.__refresh_token,
+                headers={
+                    "User-Agent": USER_AGENT_ID_AUTHENTICATION,
+                },
+                client_id=self._client_id,
+                client_secret=self._client_secret,
+            ),
+        )
+        self.__update_tokens(token)
+
+    def is_expired(self, override_expiration_check: bool = False) -> bool:
+        if not override_expiration_check and (
+            self.__access_token is not None and self._expires_at
+            if self._expires_at is not None
+            else datetime.now(tz=timezone.utc) < datetime.now(tz=timezone.utc)
+        ):
+            return False
+        return True
 
     def request(
         self,
