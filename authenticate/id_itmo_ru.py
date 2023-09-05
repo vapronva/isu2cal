@@ -151,24 +151,33 @@ class ITMOAuthenticator:
         url: HttpUrl | str,
         timeout: NonNegativeInt = 20,
         user_agent: str = USER_AGENT_GENERAL_REQUEST,
-        accept_language: str = "en",
+        language: str = "en",
         headers: dict | None = None,
+        cookies: dict | None = None,
         **kwargs,
     ) -> requests.Response:
         if headers is None:
             headers = {}
+        if cookies is None:
+            cookies = {}
         headers.update(
             {
                 "Authorization": f"{self._token_type} {self.__access_token}",
                 "User-Agent": user_agent,
                 "Accept": "application/json",
-                "Accept-Language": accept_language,
+                "Accept-Language": language,
+            },
+        )
+        cookies.update(
+            {
+                "locale": language,
             },
         )
         return requests.request(
             method,
             url.__str__(),
             headers=headers,
+            cookies=cookies,
             timeout=timeout,
             **kwargs,
         )
