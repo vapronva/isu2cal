@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timedelta
 from datetime import time as d_time
 from pathlib import Path
@@ -19,6 +20,7 @@ def get_week_range_datetimes() -> tuple[datetime, datetime]:
     today = date.today()
     start_of_week = today - timedelta(days=today.weekday())
     end_of_week = start_of_week + timedelta(days=6)
+    logging.debug("Calculated week range: %s - %s", start_of_week, end_of_week)
     return datetime.combine(start_of_week, d_time.min), datetime.combine(
         end_of_week,
         d_time.max,
@@ -55,11 +57,14 @@ class Calendar:
                 last_modified=datetime.now(tz=lesson.time_start.tzinfo),
             ),
         )
+        logging.debug(f"Added event to calendar: {lesson}")
 
     def serialize(self) -> str:
+        logging.debug("Serializing calendar")
         return self._calendar.serialize()
 
     def write_to_file(self, filename: Path):
+        logging.debug(f"Writing calendar to file: {filename}")
         with filename.open(mode="w") as f:
             f.writelines(self.serialize())
 
@@ -85,7 +90,11 @@ class Calendar:
             lesson.group,
             NotesOfNotes.GROUP_NAME,
         )
-        print(output_string)
+        logging.debug(
+            "Generated description for lesson %s that is %d chars long",
+            lesson,
+            output_string.__len__(),
+        )
         return output_string.strip()
 
     def add_note_to_output_string(
@@ -156,6 +165,7 @@ def camelcase_title(title: str, language: Languages = Languages.ENGLISH) -> str:
 
 
 def create_calendar(language: Languages, lessons: list[Lesson]) -> Calendar:
+    logging.debug("Creating calendar...")
     calendar = Calendar(language)
     for lesson in lessons:
         calendar.add_event(lesson)

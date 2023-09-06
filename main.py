@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime
 
@@ -12,6 +13,14 @@ app = FastAPI(
     title="ITMO Schedule API",
     version="1.0",
     description="API for converting ITMO schedule to iCalendar format",
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+    ],
 )
 
 

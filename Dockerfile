@@ -9,7 +9,7 @@ RUN chown -R no-name:no-name /usr/src/app
 
 COPY --chown=no-name:no-name ./requirements.txt ./requirements.txt
 
-RUN apk add --no-cache --virtual .build-deps gcc=~12.2.1_git20220924-r10 musl-dev=~1.2.4-r1 \
+RUN apk add --no-cache --virtual .build-deps gcc=~12.2.1_git20220924-r10 musl-dev=~1.2.4-r1 curl=~8.2.1-r0 \
     && pip3 install --no-cache-dir --upgrade pip==23.2.1 \
     && pip3 install --no-cache-dir -r requirements.txt \
     && apk del .build-deps

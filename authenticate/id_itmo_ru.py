@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,6 +62,7 @@ class ITMOAuthenticator:
         self.__load_token()
 
     def __post_init__(self, enable_custom_user_agent: bool = False) -> None:
+        logging.info("Initializing webdriver")
         firefox_profile = Options()
         if enable_custom_user_agent:
             firefox_profile.set_preference(
@@ -71,6 +73,7 @@ class ITMOAuthenticator:
         self.__driver.implicitly_wait(10)
 
     def __load_token(self) -> None:
+        logging.info("Loading token from file: %s", self._token_file)
         if self._token_file.exists():
             with open(self._token_file) as f:
                 token_data = json.load(f)
@@ -104,6 +107,7 @@ class ITMOAuthenticator:
         return False
 
     def authenticate(self) -> None:
+        logging.info("Authenticating via webdriver")
         self.__post_init__()
         authorization_url, _ = self.__oauth_session.authorization_url(
             url=ID_ITMO_URL_AUTHORIZATION_ENDPOINT,
@@ -141,6 +145,7 @@ class ITMOAuthenticator:
                 client_secret=self._client_secret,
             ),
         )
+        logging.info("Refreshed token: acess valid until %s", token.expires_at)
         self.__update_tokens(token)
 
     def is_expired(self, override_expiration_check: bool = False) -> bool:
@@ -180,6 +185,7 @@ class ITMOAuthenticator:
                 "locale": language,
             },
         )
+        logging.info("Sending request to %s", url)
         return requests.request(
             method,
             url.__str__(),
