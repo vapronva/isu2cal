@@ -1,5 +1,7 @@
 stages:
   - test
+  - build
+  - post-test
 
 sast:
   stage: test
@@ -7,6 +9,7 @@ include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/SAST-IaC.latest.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Container-Scanning.gitlab-ci.yml
 
 sonarqube-check:
   stage: test
@@ -25,3 +28,42 @@ sonarqube-check:
   allow_failure: true
   rules:
     - when: always
+
+docker-build-image:
+  stage: build
+  image: docker.io/library/docker:24-git
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/api:latest -f Dockerfile .
+    - docker image push --all-tags $CI_REGISTRY_IMAGE/api
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      exists:
+        - Dockerfile
+        - main.py
+      changes:
+        - "**/*.py"
+        - Dockerfile
+        - requirements.txt
+
+container_scanning:
+  stage: post-test
+  needs:
+    - docker-build-image
+  variables:
+    CS_DISABLE_DEPENDENCY_LIST: "true"
+    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/tgb:latest
+    CI_APPLICATION_REPOSITORY: $CI_REGISTRY_IMAGE/tgb
+    CI_APPLICATION_TAG: latest
+    CS_DISABLE_LANGUAGE_VULNERABILITY_SCAN: "false"
+    CS_ANALYZER_IMAGE: registry.gitlab.com/security-products/container-scanning/grype:5
+    SECURE_LOG_LEVEL: info
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      exists:
+        - Dockerfile
+        - main.py
+      changes:
+        - "**/*.py"
+        - Dockerfile
+        - requirements.txt
