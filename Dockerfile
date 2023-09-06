@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps gcc=~12.2.1_git20220924-r10 musl-de
     && pip3 install --no-cache-dir -r requirements.txt \
     && apk del .build-deps
 
-COPY --chown=no-name:no-name ./src/ /usr/src/app/
+COPY --chown=no-name:no-name ./ /usr/src/app/
 
 USER no-name
 
