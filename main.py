@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 from authenticate.id_itmo_ru import ITMOAuthenticator
-from custom_i18n.models import Languages
+from custom_i18n.langs import Languages
 from ics_calendar.cal import create_calendar
 from schedule.models import Lesson, Schedule
 

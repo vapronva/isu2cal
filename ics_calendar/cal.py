@@ -4,7 +4,8 @@ from pathlib import Path
 
 import ics
 
-from custom_i18n.models import Languages
+from custom_i18n.langs import Languages
+from custom_i18n.schd import AUDITORIUMS_TR, BUILDINGS_TR, LESSON_TYPES_TR
 from schedule.models import Lesson
 
 
@@ -26,12 +27,12 @@ class Calendar:
     def add_event(self, lesson: Lesson) -> None:
         self._calendar.events.add(
             ics.Event(
-                name=f"{lesson.subject} ({lesson.work_type.value.__str__().lower()})",
+                name=f"{lesson.subject} ({LESSON_TYPES_TR[self.language][lesson.work_type_id][1]})".title() if self.language is Languages.ENGLISH else f"{lesson.subject} ({LESSON_TYPES_TR[self.language][lesson.work_type_id][1]})",
                 begin=lesson.time_start,
                 end=lesson.time_end,
                 uid=lesson.pair_id.__str__(),
-                description=lesson.note,
-                location=f"Ауд. {lesson.room}; {lesson.building}",
+                description=Calendar.generate_description(lesson),
+                location=f"{AUDITORIUMS_TR[self.language][0][1].title()} {lesson.room}; {BUILDINGS_TR[self.language][lesson.bld_id][0] if lesson.bld_id else ''}",
                 organizer=ics.Organizer(
                     email=f"{lesson.teacher_id}",
                     common_name=f"{lesson.teacher_name or 'Unknown'}",
@@ -49,6 +50,10 @@ class Calendar:
     def write_to_file(self, filename: Path):
         with filename.open(mode="w") as f:
             f.writelines(self.serialize())
+
+    @staticmethod
+    def generate_description(lesson: Lesson) -> str:
+        return ""
 
 
 def create_calendar(language: Languages, lessons: list[Lesson]) -> Calendar:

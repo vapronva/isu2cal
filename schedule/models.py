@@ -5,26 +5,26 @@ from pydantic import BaseModel
 
 
 class LessonFormats(MultiValueEnum):
-    FACE_TO_FACE: tuple[str | int, ...] = "Очный", 1
-    MIXED: tuple[str | int, ...] = "Очно - дистанционный ", 2
-    DISTANCE: tuple[str | int, ...] = "Дистанционный ", 3
+    FACE_TO_FACE: tuple[str | int, ...] = 1, "Очный"
+    MIXED: tuple[str | int, ...] = 2, "Очно - дистанционный "
+    DISTANCE: tuple[str | int, ...] = 3, "Дистанционный "
 
 
 class LessonTypes(MultiValueEnum):
-    LECTURE: tuple[str | int, ...] = "Лекции", "Lectures", 1
-    LABORATORY: tuple[str | int, ...] = "Лабораторные занятия", "Laboratory classes", 2
-    PRACTICAL: tuple[str | int, ...] = "Практические занятия", "Practical classes", 3
-    SPORT: tuple[str | int, ...] = "Занятия спортом", "Sport", 11
+    LECTURE: tuple[str | int, ...] = 1, "Лекции", "Lectures"
+    LABORATORY: tuple[str | int, ...] = 2, "Лабораторные занятия", "Laboratory classes"
+    PRACTICAL: tuple[str | int, ...] = 3, "Практические занятия", "Practical classes"
+    SPORT: tuple[str | int, ...] = 11, "Занятия спортом", "Sport"
 
 
 class Buildings(MultiValueEnum):
-    BIRZHEVAYA_14_A = 1, "Биржевая линия, д.14, лит.A", "Birzhevaya liniya, d.14, lit.A"
-    GASTELLO_12_A = 6, "ул.Гастелло, д.12, лит.A", "ul.Gastello, d.12, lit.A"
-    KRONV_49_A = 13, "Кронверкский пр., д.49, лит.A", "Kronverksky pr., d.49, lit.A"
-    LOMO_9_A = 23, "ул.Ломоносова, д.9, лит. A", "ul.Lomonosova, d.9, lit. A"
+    BIRZHEVAYA_14_A = 1, "Биржевая линия, д.14, лит.А", "Birzhevaya liniya, d.14, lit.A"
+    GASTELLO_12_A = 6, "ул.Гастелло, д.12, лит.А", "ul.Gastello, d.12, lit.A"
+    KRONV_49_A = 13, "Кронверкский пр., д.49, лит.А", "Kronverksky pr., d.49, lit.A"
+    LOMO_9_A = 23, "ул.Ломоносова, д.9, лит. А", "ul.Lomonosova, d.9, lit. A"
     LOMO_9_B = 33, "ул.Ломоносова, д.9, лит. Б", "ul.Lomonosova, d.9, lit. B"
-    LOMO_9_E = 35, "ул.Ломоносова, д.9, лит. E", "ul.Lomonosova, d.9, lit. E"
-    LOMO_9_M = 37, "ул.Ломоносова, д.9, лит. M", "ul.Lomonosova, d.9, lit. M"
+    LOMO_9_E = 35, "ул.Ломоносова, д.9, лит. Е", "ul.Lomonosova, d.9, lit. E"
+    LOMO_9_M = 37, "ул.Ломоносова, д.9, лит. М", "ul.Lomonosova, d.9, lit. M"
     ALEXANDER_PARK_4 = 343, "Александровский парк, 4", "Aleksandrovsky park, 4"
     UNKNOWN = None
 
