@@ -52,8 +52,8 @@ container_scanning:
     - docker-build-image
   variables:
     CS_DISABLE_DEPENDENCY_LIST: "true"
-    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/tgb:latest
-    CI_APPLICATION_REPOSITORY: $CI_REGISTRY_IMAGE/tgb
+    CS_DEFAULT_BRANCH_IMAGE: $CI_REGISTRY_IMAGE/api:latest
+    CI_APPLICATION_REPOSITORY: $CI_REGISTRY_IMAGE/api
     CI_APPLICATION_TAG: latest
     CS_DISABLE_LANGUAGE_VULNERABILITY_SCAN: "false"
     CS_ANALYZER_IMAGE: registry.gitlab.com/security-products/container-scanning/grype:5
