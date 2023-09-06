@@ -96,6 +96,13 @@ class ITMOAuthenticator:
         self._expires_at = token.expires_at
         self.__save_token()
 
+    def token_exists_and_is_valid(self) -> bool:
+        if self._token_file.exists():
+            if self.is_expired():
+                self.refresh()
+            return True
+        return False
+
     def authenticate(self) -> None:
         self.__post_init__()
         authorization_url, _ = self.__oauth_session.authorization_url(
