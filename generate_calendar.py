@@ -18,6 +18,7 @@ def main(
     if not authenticator.token_exists_and_is_valid():
         msg = "Token does not exist or is invalid"
         raise RuntimeError(msg)
+    print(authenticator)
     schedule_response = authenticator.request(
         method="GET",
         url="https://api.schedule.itmo.su/api/v3/schedule/personal",
@@ -30,11 +31,13 @@ def main(
             if isinstance(end_date, datetime)
             else end_date,
         },
-    ).json()
-    for day in schedule_response["data"]:
+    )
+    print(schedule_response)
+    schedule_response_json = schedule_response.json()
+    for day in schedule_response_json["data"]:
         for lesson in day["lessons"]:
             lesson["date"] = day["date"]
-    schedule = Schedule(**schedule_response)
+    schedule = Schedule(**schedule_response_json)
     lessons: list[Lesson] = []
     for day in schedule.data:
         for lesson in day.lessons:
