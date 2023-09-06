@@ -19,6 +19,7 @@ def main(
         msg = "Token does not exist or is invalid"
         raise RuntimeError(msg)
     print(authenticator)
+    print(authenticator.refresh())
     schedule_response = authenticator.request(
         method="GET",
         url="https://api.schedule.itmo.su/api/v3/schedule/personal",
